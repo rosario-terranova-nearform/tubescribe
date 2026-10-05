@@ -1,6 +1,6 @@
 # Task 02: Shared package: types, zod schemas, source parser
 
-**Status**: pending
+**Status**: done (2026-10-05)
 **Depends on**: 01
 
 ## Goal
@@ -28,6 +28,6 @@
 
 ## Acceptance criteria
 
-- [ ] Unit tests for the parser: 10+ cases including shorts URL, youtu.be, bare UC id, `list=`, mixed garbage, trailing whitespace
-- [ ] Schema round-trip tests for the main API contracts
-- [ ] `pnpm test` green
+- [x] Unit tests for the parser: 10+ cases including shorts URL, youtu.be, bare UC id, `list=`, mixed garbage, trailing whitespace (25 cases in `source-input.test.ts`)
+- [x] Schema round-trip tests for the main API contracts (44 cases across `domain.test.ts`, `errors.test.ts`, `api/contracts.test.ts`)
+- [x] `pnpm test` green (77 shared tests, 79 total)
