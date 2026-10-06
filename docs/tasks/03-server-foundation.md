@@ -1,6 +1,6 @@
 # Task 03: Server foundation: config, logger, DB, settings
 
-**Status**: pending
+**Status**: done (2026-10-06)
 **Depends on**: 01, 02
 
 ## Goal

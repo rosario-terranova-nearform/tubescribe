@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "pnpm --filter \"./packages/*\" build && pnpm -r typecheck"
+    "typecheck": "pnpm --filter \"./packages/*\" build && pnpm -r typecheck",
+    "db:migrate": "pnpm --filter @tubescribe/server db:migrate"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

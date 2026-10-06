@@ -1,7 +1,6 @@
 import { type Logger, pino } from 'pino';
+import type { Config } from './config.js';
 
-const isDev = (process.env.NODE_ENV ?? 'development') !== 'production';
-
-export function createLogger(): Logger {
-  return pino({ level: process.env.LOG_LEVEL ?? (isDev ? 'info' : 'info') });
+export function createLogger(config: Pick<Config, 'logLevel'>): Logger {
+  return pino({ level: config.logLevel });
 }
