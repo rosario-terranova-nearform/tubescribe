@@ -1,0 +1,30 @@
+{
+  "info": { "title": "Example Playlist", "total_items": "3" },
+  "pages": [
+    {
+      "items": [
+        {
+          "id": "plv00000001",
+          "title": "Playlist video",
+          "duration": { "text": "2:00", "seconds": 120 }
+        },
+        {
+          "content_id": "plv00000002",
+          "content_type": "VIDEO",
+          "metadata": { "title": "Lockup in playlist" }
+        }
+      ],
+      "hasContinuation": true
+    },
+    {
+      "items": [
+        {
+          "id": "plv00000003",
+          "title": "Last one",
+          "duration": { "text": "0:05", "seconds": 5 }
+        }
+      ],
+      "hasContinuation": false
+    }
+  ]
+}

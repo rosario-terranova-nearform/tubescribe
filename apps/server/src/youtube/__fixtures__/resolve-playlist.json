@@ -1,0 +1,11 @@
+{
+  "playlistId": "PLexampleplaylist1234",
+  "info": {
+    "title": "Example Playlist",
+    "total_items": "1,234",
+    "thumbnails": [
+      { "url": "https://i.ytimg.com/vi/abc/default.jpg", "width": 120, "height": 90 },
+      { "url": "https://i.ytimg.com/vi/abc/hqdefault.jpg", "width": 480, "height": 360 }
+    ]
+  }
+}

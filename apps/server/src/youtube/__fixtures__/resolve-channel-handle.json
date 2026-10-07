@@ -1,0 +1,11 @@
+{
+  "handle": "@ExampleCreator",
+  "browseId": "UCexamplechannel12345678",
+  "metadata": {
+    "title": "Example Creator",
+    "avatar": [
+      { "url": "//yt3.googleusercontent.com/example-small", "width": 88, "height": 88 },
+      { "url": "//yt3.googleusercontent.com/example-big", "width": 800, "height": 800 }
+    ]
+  }
+}

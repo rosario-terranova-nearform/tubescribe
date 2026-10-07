@@ -1,0 +1,20 @@
+{
+  "videoId": "manualvid01",
+  "captions": {
+    "caption_tracks": [
+      { "language_code": "en", "name": "English", "is_translatable": true },
+      { "language_code": "en", "name": "English", "kind": "asr", "is_translatable": true },
+      { "language_code": "de", "name": "German", "is_translatable": true }
+    ],
+    "audio_tracks": [{ "default_caption_track_index": 0 }],
+    "default_audio_track_index": 0
+  },
+  "transcript": {
+    "selectedLanguage": "English",
+    "segments": [
+      { "text": "hello world", "start_ms": "1200", "end_ms": "3400" },
+      { "kind": "sectionHeader", "title": "Chapter one" },
+      { "text": "second line", "start_ms": "3400", "end_ms": "5900" }
+    ]
+  }
+}

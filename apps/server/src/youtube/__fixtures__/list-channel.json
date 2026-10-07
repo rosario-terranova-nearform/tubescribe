@@ -1,0 +1,80 @@
+{
+  "metadata": { "title": "Example Creator" },
+  "tabs": {
+    "videos": {
+      "pages": [
+        {
+          "videos": [
+            {
+              "video_id": "vid00000001",
+              "title": "First upload",
+              "published": "Mar 5, 2023",
+              "duration": { "text": "12:34", "seconds": 754 }
+            },
+            {
+              "video_id": "vid00000002",
+              "title": "Grid layout video",
+              "published": "3 days ago",
+              "duration": "1:02:03"
+            }
+          ],
+          "hasContinuation": true
+        },
+        {
+          "videos": [
+            {
+              "video_id": "vid00000003",
+              "title": "Older upload",
+              "published": "Jan 1, 2020",
+              "duration": { "text": "1:01", "seconds": 61 }
+            }
+          ],
+          "hasContinuation": false
+        }
+      ]
+    },
+    "shorts": {
+      "pages": [
+        {
+          "videos": [
+            {
+              "entity_id": "shorts-shelf-item-sht00000001-0",
+              "overlay_metadata": { "primary_text": "A short" }
+            },
+            {
+              "entity_id": "shorts-shelf-item-sht00000002",
+              "on_tap_endpoint": { "payload": { "videoId": "sht00000002" } },
+              "overlay_metadata": { "primary_text": "Tap short" }
+            },
+            { "id": "sht00000003", "title": "Old reel short", "views": "1.2K views" }
+          ],
+          "hasContinuation": false
+        }
+      ]
+    },
+    "live": {
+      "pages": [
+        {
+          "videos": [
+            {
+              "video_id": "vid00000003",
+              "title": "Older upload (streamed)",
+              "duration": { "text": "1:01:01", "seconds": 3661 }
+            },
+            {
+              "content_id": "liv00000001",
+              "content_type": "VIDEO",
+              "metadata": { "title": "Livestream" }
+            },
+            {
+              "content_id": "plx0000000000001",
+              "content_type": "PLAYLIST",
+              "metadata": { "title": "Not a video — skipped" }
+            }
+          ],
+          "hasContinuation": false
+        }
+      ]
+    }
+  }
+}

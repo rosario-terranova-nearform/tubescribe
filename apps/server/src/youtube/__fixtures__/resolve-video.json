@@ -1,0 +1,16 @@
+{
+  "videoId": "dQw4w9WgXcQ",
+  "basic_info": {
+    "id": "dQw4w9WgXcQ",
+    "title": "A Single Video",
+    "duration": 212,
+    "thumbnail": [
+      { "url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/default.jpg", "width": 120, "height": 90 },
+      {
+        "url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+        "width": 1280,
+        "height": 720
+      }
+    ]
+  }
+}

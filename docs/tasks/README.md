@@ -10,7 +10,7 @@ Design source of truth: [`../DESIGN.md`](../DESIGN.md). Never deviate without as
 | 01 | [Monorepo scaffold](01-monorepo-scaffold.md) | done (2026-10-03) | 00 |
 | 02 | [Shared package: types, zod schemas, source parser](02-shared-package.md) | done (2026-10-05) | 01 |
 | 03 | [Server foundation: config, logger, DB, settings](03-server-foundation.md) | done (2026-10-06) | 01, 02 |
-| 04 | [YouTube service: resolution, listing, transcript engines](04-youtube-service.md) | pending | 03 |
+| 04 | [YouTube service: resolution, listing, transcript engines](04-youtube-service.md) | done (2026-10-07) | 03 |
 | 05 | [Extraction engine: job queue, worker, file writer](05-extraction-engine.md) | pending | 04 |
 | 06 | [Sources REST API](06-sources-api.md) | pending | 05 |
 | 07 | [Embeddings pipeline: chunker, sqlite-vec, retrieval](07-embeddings-pipeline.md) | pending | 05 |

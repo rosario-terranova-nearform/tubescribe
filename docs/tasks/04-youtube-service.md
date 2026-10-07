@@ -1,6 +1,6 @@
 # Task 04: YouTube service: resolution, listing, transcript engines
 
-**Status**: pending
+**Status**: done (2026-10-07)
 **Depends on**: 03
 
 ## Goal

@@ -1,0 +1,6 @@
+{
+  "items": [
+    { "text": "hello world", "offset": 1200, "duration": 2200, "lang": "en" },
+    { "text": "second line", "offset": 3400, "duration": 2500, "lang": "en" }
+  ]
+}
