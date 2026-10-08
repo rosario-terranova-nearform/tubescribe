@@ -1,6 +1,6 @@
 # Task 05: Extraction engine: job queue, worker, file writer
 
-**Status**: pending
+**Status**: done (2026-10-08)
 **Depends on**: 04
 
 ## Goal

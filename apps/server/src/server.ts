@@ -4,6 +4,7 @@
 import { createApp } from './app.js';
 import { getConfig } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
+import { createExtractionWorker } from './jobs/worker.js';
 import { createLogger } from './logger.js';
 import { seedSettings } from './settings.js';
 
@@ -18,15 +19,25 @@ async function main(): Promise<void> {
 
   const app = createApp({ config, db });
 
+  // Extraction worker: resumes queued/running jobs on boot (see jobs/worker.ts).
+  const worker = createExtractionWorker({ db, config, logger });
+  worker.start();
+
   const server = app.listen(config.port, () => {
     logger.info({ port: config.port }, 'server listening');
   });
 
   const shutdown = (signal: string) => {
     logger.info({ signal }, 'shutting down');
-    server.close(() => {
-      sqlite.close();
-      process.exit(0);
+    void (async () => {
+      await worker.stop();
+      server.close(() => {
+        sqlite.close();
+        process.exit(0);
+      });
+    })().catch((err: unknown) => {
+      logger.error({ err }, 'shutdown failed');
+      process.exit(1);
     });
   };
 
