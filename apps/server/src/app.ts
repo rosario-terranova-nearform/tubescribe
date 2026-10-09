@@ -10,11 +10,18 @@ import { HttpError } from './http-error.js';
 import { createLogger } from './logger.js';
 import { createHttpLogger } from './middleware.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerJobsRoutes } from './routes/jobs.js';
 import { registerSettingsRoutes } from './routes/settings.js';
+import { registerSourcesRoutes } from './routes/sources.js';
+import type { InnertubeFactory } from './youtube/types.js';
 
 export interface AppDeps {
   config: Config;
   db: Db;
+  /** Youtube client factory for the sources routes (resolve/list). */
+  youtube: InnertubeFactory;
+  /** Extraction worker handle — woken after a job is enqueued. */
+  worker?: { notify(): void };
 }
 
 function apiError(code: ApiErrorCode, message: string, details?: HttpError['details']): ApiError {
@@ -28,7 +35,7 @@ function isBodyParseError(err: unknown): err is SyntaxError & { status: number }
   );
 }
 
-export function createApp({ config, db }: AppDeps): Express {
+export function createApp({ config, db, youtube, worker }: AppDeps): Express {
   const logger = createLogger(config);
   const app = express();
 
@@ -37,6 +44,8 @@ export function createApp({ config, db }: AppDeps): Express {
 
   registerHealthRoutes(app);
   registerSettingsRoutes(app, db);
+  registerSourcesRoutes(app, { db, config, youtube, worker });
+  registerJobsRoutes(app, db);
 
   // Unknown routes → 404 in the shared error shape.
   app.use((_req, res) => {

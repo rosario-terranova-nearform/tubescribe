@@ -1,6 +1,6 @@
 # Task 06: Sources REST API
 
-**Status**: pending
+**Status**: done (2026-10-09)
 **Depends on**: 05
 
 ## Goal

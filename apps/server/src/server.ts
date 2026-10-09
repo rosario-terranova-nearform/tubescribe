@@ -7,6 +7,7 @@ import { createDb, runMigrations } from './db/client.js';
 import { createExtractionWorker } from './jobs/worker.js';
 import { createLogger } from './logger.js';
 import { seedSettings } from './settings.js';
+import { createDefaultClient } from './youtube/client.js';
 
 async function main(): Promise<void> {
   const config = getConfig();
@@ -17,10 +18,10 @@ async function main(): Promise<void> {
   seedSettings(db, config);
   logger.info({ dataDir: config.dataDir }, 'database ready');
 
-  const app = createApp({ config, db });
-
   // Extraction worker: resumes queued/running jobs on boot (see jobs/worker.ts).
   const worker = createExtractionWorker({ db, config, logger });
+
+  const app = createApp({ config, db, youtube: createDefaultClient, worker });
   worker.start();
 
   const server = app.listen(config.port, () => {

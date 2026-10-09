@@ -25,9 +25,11 @@ import {
   ListJobsQuerySchema,
   ListJobsResponseSchema,
   ListModelsResponseSchema,
+  ListSourceVideosQuerySchema,
   ListSourceVideosResponseSchema,
   ListSourcesResponseSchema,
   ModelSchema,
+  ReextractSourceQuerySchema,
   ReextractSourceResponseSchema,
   ReindexSourceResponseSchema,
   ResolveSourceRequestSchema,
@@ -97,7 +99,7 @@ describe('resolve-source contract', () => {
     expect(ResolveSourceRequestSchema.parse({ input: '@mkbhd' })).toEqual({ input: '@mkbhd' });
   });
 
-  it('response round-trips with nullable metadata', () => {
+  it('response round-trips with nullable metadata and duplicate flag', () => {
     const v = {
       suggestion: {
         kind: 'channel',
@@ -106,9 +108,13 @@ describe('resolve-source contract', () => {
         thumbnailUrl: null,
         channelTitle: 'MKBHD',
         videoCount: null,
+        duplicate: false,
       },
     };
     expectRoundTrip(ResolveSourceResponseSchema, v, v);
+    expect(() =>
+      ResolveSourceResponseSchema.parse({ suggestion: { ...v.suggestion, duplicate: undefined } }),
+    ).toThrow();
   });
 });
 
@@ -126,9 +132,19 @@ describe('sources contract', () => {
     expectRoundTrip(CreateSourceResponseSchema, v, v);
   });
 
-  it('list/get responses round-trip', () => {
-    expectRoundTrip(ListSourcesResponseSchema, { sources: [SOURCE] }, { sources: [SOURCE] });
-    expectRoundTrip(GetSourceResponseSchema, { source: SOURCE }, { source: SOURCE });
+  it('list/get responses round-trip with aggregated status', () => {
+    const withStatus = {
+      ...SOURCE,
+      status: { total: 10, pending: 2, fetched: 6, failed: 1, embedded: 1 },
+    };
+    expectRoundTrip(
+      ListSourcesResponseSchema,
+      { sources: [withStatus] },
+      { sources: [withStatus] },
+    );
+    expectRoundTrip(GetSourceResponseSchema, { source: withStatus }, { source: withStatus });
+    // A bare source without status no longer satisfies list/get contracts.
+    expect(() => ListSourcesResponseSchema.parse({ sources: [SOURCE] })).toThrow();
   });
 
   it('update request allows partial typeFilter', () => {
@@ -147,7 +163,15 @@ describe('sources contract', () => {
     expect(DeleteSourceResponseSchema.parse({ ok: true })).toEqual({ ok: true });
   });
 
-  it('list videos', () => {
+  it('list videos query coerces + defaults, response carries pagination', () => {
+    expect(ListSourceVideosQuerySchema.parse({})).toEqual({ limit: 100, offset: 0 });
+    expect(ListSourceVideosQuerySchema.parse({ limit: '25', offset: '50' })).toEqual({
+      limit: 25,
+      offset: 50,
+    });
+    expect(() => ListSourceVideosQuerySchema.parse({ limit: '0' })).toThrow();
+    expect(() => ListSourceVideosQuerySchema.parse({ limit: 'abc' })).toThrow();
+
     const v = {
       videos: [
         {
@@ -166,8 +190,17 @@ describe('sources contract', () => {
           embeddedAt: null,
         },
       ],
+      total: 42,
+      limit: 100,
+      offset: 0,
     };
     expectRoundTrip(ListSourceVideosResponseSchema, v, v);
+  });
+
+  it('re-extract query accepts only true/false for all', () => {
+    expect(ReextractSourceQuerySchema.parse({})).toEqual({});
+    expect(ReextractSourceQuerySchema.parse({ all: 'true' })).toEqual({ all: 'true' });
+    expect(() => ReextractSourceQuerySchema.parse({ all: 'yes' })).toThrow();
   });
 
   it('re-extract and re-index responses wrap a job', () => {

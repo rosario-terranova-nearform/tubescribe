@@ -17,6 +17,8 @@ export const ResolvedSourceSuggestionSchema = SourceInputSchema.extend({
   thumbnailUrl: z.string().nullable(),
   channelTitle: z.string().nullable(),
   videoCount: z.number().int().nonnegative().nullable(),
+  /** True when a source with the same normalized (kind, identifier) exists. */
+  duplicate: z.boolean(),
 });
 export type ResolvedSourceSuggestion = z.infer<typeof ResolvedSourceSuggestionSchema>;
 
