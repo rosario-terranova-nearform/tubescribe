@@ -184,9 +184,10 @@ export function resetRunningItems(db: Db, kind: JobKind = 'extract'): number {
 
 /**
  * Complete every active job with no open (pending/running) items left,
- * including zero-item jobs. Returns the completed job ids.
+ * including zero-item jobs. Returns the completed rows (the extract worker
+ * chains embed jobs off them — see embed/index-job.ts).
  */
-export function completeDrainedJobs(db: Db): string[] {
+export function completeDrainedJobs(db: Db): JobRow[] {
   return db.transaction((tx) => {
     const openJobIds = new Set(
       tx
@@ -212,6 +213,6 @@ export function completeDrainedJobs(db: Db): string[] {
         ),
       )
       .run();
-    return drained.map((job) => job.id);
+    return drained.map((job) => ({ ...job, status: 'completed' as JobStatus }));
   });
 }

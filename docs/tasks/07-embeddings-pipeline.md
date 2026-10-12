@@ -1,6 +1,6 @@
 # Task 07: Embeddings pipeline: chunker, sqlite-vec, retrieval
 
-**Status**: pending
+**Status**: done (2026-10-12)
 **Depends on**: 05
 
 ## Goal

@@ -18,6 +18,7 @@ import {
   ListSourcesResponseSchema,
   ReextractSourceQuerySchema,
   ReextractSourceResponseSchema,
+  ReindexSourceResponseSchema,
   ResolveSourceRequestSchema,
   ResolveSourceResponseSchema,
   type SourceInput,
@@ -28,9 +29,12 @@ import {
 } from '@tubescribe/shared';
 import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Express, NextFunction, Request, Response } from 'express';
+import type { Logger } from 'pino';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { sources, videos } from '../db/schema.js';
+import { reindexSource } from '../embed/index-job.js';
+import { deleteVecRowsForSource } from '../embed/vec.js';
 import { HttpError } from '../http-error.js';
 import { createJob } from '../jobs/queue.js';
 import { getSourceStatus } from '../jobs/status.js';
@@ -45,11 +49,14 @@ import type {
 
 export interface SourcesRoutesDeps {
   db: Db;
-  config: Pick<Config, 'dataDir'>;
+  config: Pick<Config, 'dataDir' | 'defaultEmbeddingModel'>;
   /** Lazily creates the youtube client — creation may do I/O. */
   youtube: InnertubeFactory;
   /** Wakes the extraction worker after a job is enqueued. */
   worker?: { notify(): void };
+  /** Wakes the embed worker after a reindex job is enqueued. */
+  embedWorker?: { notify(): void };
+  logger?: Logger;
 }
 
 /** Express 4 does not forward async rejections to the error middleware. */
@@ -289,9 +296,24 @@ export function registerSourcesRoutes(app: Express, deps: SourcesRoutesDeps): vo
     res.status(201).json(ReextractSourceResponseSchema.parse({ job }));
   });
 
+  /**
+   * Drop the source's chunks and rebuild them via a fresh embed job.
+   * NOTE: changing the embedding model changes vector dimensions — the first
+   * reindex after a model change resets ALL embeddings (every source), and
+   * each source must then be reindexed (see embed/vec.ts, docs/DESIGN.md).
+   */
+  app.post('/api/sources/:id/reindex', (req, res) => {
+    const source = getSourceOr404(db, req.params.id);
+    const job = reindexSource({ db, config, logger: deps.logger }, source.id);
+    deps.embedWorker?.notify();
+    res.status(201).json(ReindexSourceResponseSchema.parse({ job }));
+  });
+
   app.delete('/api/sources/:id', (req, res) => {
     const source = getSourceOr404(db, req.params.id);
-    // FK cascades remove videos, jobs, job_items and bot_sources rows.
+    // vec0 has no FK enforcement — delete this source's vectors first, then
+    // FK cascades remove chunks, videos, jobs, job_items and bot_sources rows.
+    deleteVecRowsForSource(db, source.id);
     db.delete(sources).where(eq(sources.id, source.id)).run();
     rmSync(join(config.dataDir, 'transcripts', source.id), { recursive: true, force: true });
     res.json(DeleteSourceResponseSchema.parse({ ok: true }));

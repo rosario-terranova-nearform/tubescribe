@@ -13,7 +13,12 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import type { TranscriptEngine } from '../youtube/engines/engine.js';
 import { createDefaultEngines, processClaimedItem } from './pipeline.js';
-import { claimNextPendingItem, completeDrainedJobs, resetRunningItems } from './queue.js';
+import {
+  type JobRow,
+  claimNextPendingItem,
+  completeDrainedJobs,
+  resetRunningItems,
+} from './queue.js';
 
 export type WorkerConfig = Pick<
   Config,
@@ -35,6 +40,12 @@ export interface WorkerDeps {
   random?: () => number;
   /** Poll interval when the queue is drained (notify() wakes sooner). */
   idlePollMs?: number;
+  /**
+   * Called with each batch of jobs this worker completes (this worker is the
+   * sole job completer). server.ts uses it to chain embed jobs onto
+   * completed extraction jobs.
+   */
+  onJobsCompleted?: (completed: JobRow[]) => void;
 }
 
 export interface ExtractionWorker {
@@ -91,7 +102,8 @@ export function createExtractionWorker(deps: WorkerDeps): ExtractionWorker {
       try {
         const claimed = claimNextPendingItem(db);
         if (!claimed) {
-          completeDrainedJobs(db);
+          const completed = completeDrainedJobs(db);
+          if (completed.length > 0) deps.onJobsCompleted?.(completed);
           if (stopped) break;
           await idleWait();
           continue;

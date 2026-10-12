@@ -4,6 +4,8 @@
 import { createApp } from './app.js';
 import { getConfig } from './config.js';
 import { createDb, runMigrations } from './db/client.js';
+import { createOpenRouterEmbedder } from './embed/embedder.js';
+import { chainEmbedJobs, createEmbedWorker } from './embed/index-job.js';
 import { createExtractionWorker } from './jobs/worker.js';
 import { createLogger } from './logger.js';
 import { seedSettings } from './settings.js';
@@ -18,11 +20,30 @@ async function main(): Promise<void> {
   seedSettings(db, config);
   logger.info({ dataDir: config.dataDir }, 'database ready');
 
+  // Embed worker + extract→embed chaining: when an extraction job drains,
+  // its source's newly fetched videos are queued for embedding.
+  const embedder = createOpenRouterEmbedder({ apiKey: config.openrouterApiKey, logger });
+  const embedWorker = createEmbedWorker({ db, config, logger, embedder });
   // Extraction worker: resumes queued/running jobs on boot (see jobs/worker.ts).
-  const worker = createExtractionWorker({ db, config, logger });
+  const worker = createExtractionWorker({
+    db,
+    config,
+    logger,
+    onJobsCompleted: (completed) => {
+      const chained = chainEmbedJobs(db, completed);
+      if (chained.length > 0) {
+        logger.info(
+          { jobs: chained.map((j) => ({ id: j.id, sourceId: j.sourceId, items: j.totalItems })) },
+          'chained embed jobs',
+        );
+        embedWorker.notify();
+      }
+    },
+  });
 
-  const app = createApp({ config, db, youtube: createDefaultClient, worker });
+  const app = createApp({ config, db, youtube: createDefaultClient, worker, embedWorker });
   worker.start();
+  embedWorker.start();
 
   const server = app.listen(config.port, () => {
     logger.info({ port: config.port }, 'server listening');
@@ -32,6 +53,7 @@ async function main(): Promise<void> {
     logger.info({ signal }, 'shutting down');
     void (async () => {
       await worker.stop();
+      await embedWorker.stop();
       server.close(() => {
         sqlite.close();
         process.exit(0);

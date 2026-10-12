@@ -22,6 +22,8 @@ export interface AppDeps {
   youtube: InnertubeFactory;
   /** Extraction worker handle — woken after a job is enqueued. */
   worker?: { notify(): void };
+  /** Embed worker handle — woken after a reindex job is enqueued. */
+  embedWorker?: { notify(): void };
 }
 
 function apiError(code: ApiErrorCode, message: string, details?: HttpError['details']): ApiError {
@@ -35,7 +37,7 @@ function isBodyParseError(err: unknown): err is SyntaxError & { status: number }
   );
 }
 
-export function createApp({ config, db, youtube, worker }: AppDeps): Express {
+export function createApp({ config, db, youtube, worker, embedWorker }: AppDeps): Express {
   const logger = createLogger(config);
   const app = express();
 
@@ -44,7 +46,7 @@ export function createApp({ config, db, youtube, worker }: AppDeps): Express {
 
   registerHealthRoutes(app);
   registerSettingsRoutes(app, db);
-  registerSourcesRoutes(app, { db, config, youtube, worker });
+  registerSourcesRoutes(app, { db, config, youtube, worker, embedWorker, logger });
   registerJobsRoutes(app, db);
 
   // Unknown routes → 404 in the shared error shape.

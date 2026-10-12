@@ -252,7 +252,7 @@ describe('queue', () => {
 
       const completed = completeDrainedJobs(t.db);
 
-      expect(completed.sort()).toEqual([empty.id, done.id].sort());
+      expect(completed.map((j) => j.id).sort()).toEqual([empty.id, done.id].sort());
       expect(getJob(t.db, empty.id)?.status).toBe('completed');
       expect(getJob(t.db, done.id)?.status).toBe('completed');
       expect(getJob(t.db, done.id)?.finishedAt).not.toBeNull();

@@ -12,6 +12,7 @@ import {
   ListSourceVideosResponseSchema,
   ListSourcesResponseSchema,
   ReextractSourceResponseSchema,
+  ReindexSourceResponseSchema,
   ResolveSourceResponseSchema,
   type Video,
 } from '@tubescribe/shared';
@@ -19,10 +20,12 @@ import type { Express } from 'express';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
-import { jobItems, jobs, sources, videos } from '../db/schema.js';
+import { chunks as chunksTable, jobItems, jobs, sources, videos } from '../db/schema.js';
+import { type EmbedWorker, chainEmbedJobs, createEmbedWorker } from '../embed/index-job.js';
 import { transcriptPaths } from '../jobs/files.js';
 import { type ExtractionWorker, createExtractionWorker } from '../jobs/worker.js';
 import { createLogger } from '../logger.js';
+import { type FakeEmbedder, fakeEmbedder } from '../testing/fake-embedder.js';
 import { alwaysOk, fakeEngine, okResult, unavailable } from '../testing/fake-engines.js';
 import { type TestDb, makeTestDb } from '../testing/test-db.js';
 import { fakeChannel, fakeInnertube } from '../youtube/__fixtures__/fakes.js';
@@ -73,34 +76,65 @@ function channelClient(): InnertubeLike {
 interface Setup extends TestDb {
   app: Express;
   worker: ExtractionWorker;
+  embedWorker?: EmbedWorker;
+  embedder?: FakeEmbedder;
   cleanup: () => Promise<void>;
 }
 
 function setup(
-  opts: { client?: InnertubeLike; engines?: TranscriptEngine[]; startWorker?: boolean } = {},
+  opts: {
+    client?: InnertubeLike;
+    engines?: TranscriptEngine[];
+    startWorker?: boolean;
+    /** Wire the embed worker + extract→embed chaining (like server.ts). */
+    embed?: boolean;
+  } = {},
 ): Setup {
   const base = makeTestDb();
+  const logger = createLogger(base.config);
+  const embedder = opts.embed ? fakeEmbedder() : undefined;
+  const embedWorker = embedder
+    ? createEmbedWorker({
+        db: base.db,
+        config: base.config,
+        logger,
+        embedder,
+        idlePollMs: 5,
+      })
+    : undefined;
   const worker = createExtractionWorker({
     db: base.db,
     config: base.config,
-    logger: createLogger(base.config),
+    logger,
     engines: opts.engines ?? [alwaysOk('youtubei.js')],
     sleep: () => Promise.resolve(),
     idlePollMs: 5,
+    onJobsCompleted: embedWorker
+      ? (completed) => {
+          if (chainEmbedJobs(base.db, completed).length > 0) embedWorker.notify();
+        }
+      : undefined,
   });
   const app = createApp({
     config: base.config,
     db: base.db,
     youtube: () => Promise.resolve(opts.client ?? fakeInnertube({})),
     worker,
+    embedWorker,
   });
-  if (opts.startWorker !== false) worker.start();
+  if (opts.startWorker !== false) {
+    worker.start();
+    embedWorker?.start();
+  }
   return {
     ...base,
     app,
     worker,
+    embedWorker,
+    embedder,
     cleanup: async () => {
       await worker.stop();
+      await embedWorker?.stop();
       base.cleanup();
     },
   };
@@ -300,6 +334,7 @@ describe('/api/sources', () => {
       await request(t.app).get('/api/sources/nope'),
       await request(t.app).get('/api/sources/nope/videos'),
       await request(t.app).post('/api/sources/nope/reextract'),
+      await request(t.app).post('/api/sources/nope/reindex'),
       await request(t.app).delete('/api/sources/nope'),
     ];
     for (const res of expected404) {
@@ -423,5 +458,43 @@ describe('/api/sources', () => {
     expect(res.status).toBe(200);
     expect(existsSync(join(t.dataDir, 'transcripts', source.id))).toBe(false);
     expect(t.db.select().from(sources).all()).toEqual([]);
+  });
+
+  it('reindex drops and rebuilds the source’s embeddings end to end', async () => {
+    t = setup({ client: channelClient(), embed: true });
+    const { source, job } = await createSource(t.app);
+    await waitForJob(t.app, job.id);
+
+    // The chained embed job embeds both videos (status → embedded).
+    let detail = GetSourceResponseSchema.parse(
+      (await request(t.app).get(`/api/sources/${source.id}`)).body,
+    );
+    await vi.waitFor(
+      async () => {
+        detail = GetSourceResponseSchema.parse(
+          (await request(t.app).get(`/api/sources/${source.id}`)).body,
+        );
+        expect(detail.source.status.embedded).toBe(2);
+      },
+      { timeout: 5000, interval: 10 },
+    );
+    const chunksBefore = t.db.select().from(chunksTable).all();
+    expect(chunksBefore).toHaveLength(2);
+
+    // Reindex: drops the chunks and enqueues a fresh embed job.
+    const res = await request(t.app).post(`/api/sources/${source.id}/reindex`);
+    expect(res.status).toBe(201);
+    const { job: reindexJob } = ReindexSourceResponseSchema.parse(res.body);
+    expect(reindexJob).toMatchObject({ kind: 'embed', sourceId: source.id, totalItems: 2 });
+
+    // The embed worker (woken by the route) rebuilds the chunks.
+    await waitForJob(t.app, reindexJob.id);
+    detail = GetSourceResponseSchema.parse(
+      (await request(t.app).get(`/api/sources/${source.id}`)).body,
+    );
+    expect(detail.source.status.embedded).toBe(2);
+    const chunksAfter = t.db.select().from(chunksTable).all();
+    expect(chunksAfter).toHaveLength(2);
+    expect(chunksAfter.map((c) => c.id).sort()).not.toEqual(chunksBefore.map((c) => c.id).sort());
   });
 });

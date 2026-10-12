@@ -45,6 +45,12 @@ docs/
 | `pnpm typecheck` | `tsc --noEmit` everywhere |
 | `pnpm db:migrate` | drizzle-kit migrations (lands in task 03) |
 
+## Embeddings
+
+Extraction jobs chain automatically into embedding jobs: fetched transcripts are chunked (~500 tokens, 10% overlap, aligned to caption timestamps), embedded via OpenRouter (`DEFAULT_EMBEDDING_MODEL`, overridable in settings), and stored in sqlite-vec for per-bot retrieval. `POST /api/sources/:id/reindex` drops and rebuilds a source's embeddings.
+
+**Changing the embedding model requires a full reindex**: different models produce different vector dimensions, and a vector space must never mix models. The first reindex after a model change resets *all* sources' embeddings; reindex each source afterwards (its videos keep their transcripts — only vectors are rebuilt).
+
 ## Conventions
 
 See [`AGENTS.md`](AGENTS.md) if you're an agent or contributor.

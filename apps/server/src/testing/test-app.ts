@@ -12,6 +12,7 @@ export { makeTestConfig } from './test-db.js';
 export interface TestAppDeps {
   youtube?: InnertubeFactory;
   worker?: { notify(): void };
+  embedWorker?: { notify(): void };
 }
 
 export interface TestApp extends TestDb {
@@ -29,6 +30,7 @@ export function makeTestApp(overrides: Partial<Config> = {}, deps: TestAppDeps =
     db: base.db,
     youtube: deps.youtube ?? noYoutube,
     worker: deps.worker,
+    embedWorker: deps.embedWorker,
   });
   return { ...base, app };
 }

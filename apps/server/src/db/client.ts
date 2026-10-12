@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import * as sqliteVec from 'sqlite-vec';
 import * as schema from './schema.js';
 
 export type Db = BetterSQLite3Database<typeof schema>;
@@ -21,6 +22,9 @@ export function createDb(dataDir: string): DbHandle {
   const sqlite = new Database(join(dataDir, 'tubescribe.db'));
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
+  // Vector search lives in the same DB file (docs/DESIGN.md); the extension
+  // must be loaded before any vec_chunks statement runs.
+  sqliteVec.load(sqlite);
   return { db: drizzle(sqlite, { schema }), sqlite };
 }
 

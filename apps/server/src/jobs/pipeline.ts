@@ -7,7 +7,8 @@ import { eq } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
-import { videos } from '../db/schema.js';
+import { chunks, videos } from '../db/schema.js';
+import { deleteVecRowsForVideo } from '../embed/vec.js';
 import { createDefaultClient, createTvEmbeddedClient } from '../youtube/client.js';
 import { type TranscriptEngine, TranscriptError } from '../youtube/engines/engine.js';
 import { YoutubeTranscriptEngine } from '../youtube/engines/youtube-transcript.js';
@@ -132,6 +133,10 @@ export async function processClaimedItem(deps: PipelineDeps, claimed: ClaimedIte
       segments: result.segments,
       fullText: result.fullText,
     });
+    // A fresh transcript invalidates any previous embeddings: drop the old
+    // chunks and reset embeddedAt so the chained embed job re-embeds.
+    deleteVecRowsForVideo(db, videoId);
+    db.delete(chunks).where(eq(chunks.videoId, videoId)).run();
     db.update(videos)
       .set({
         status: 'fetched',
@@ -139,6 +144,7 @@ export async function processClaimedItem(deps: PipelineDeps, claimed: ClaimedIte
         captionKind: result.captionKind,
         engine: result.engine,
         fetchedAt,
+        embeddedAt: null,
         error: null,
       })
       .where(eq(videos.id, videoId))

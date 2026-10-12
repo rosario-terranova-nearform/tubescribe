@@ -166,3 +166,41 @@ export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value', { mode: 'json' }).notNull(),
 });
+
+/**
+ * Transcript chunks keyed to videos (never bots — one embedding per chunk
+ * regardless of how many bots use the source). Denormalized
+ * sourceId/title/startMs/endMs make citations a single-table read; the
+ * matching vector lives in the `vec_chunks` virtual table (created lazily at
+ * runtime, see embed/vec.ts — its dimension depends on the embedding model).
+ */
+export const chunks = sqliteTable(
+  'chunks',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    videoId: text('video_id')
+      .notNull()
+      .references(() => videos.id, { onDelete: 'cascade' }),
+    sourceId: text('source_id')
+      .notNull()
+      .references(() => sources.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    startMs: integer('start_ms').notNull(),
+    endMs: integer('end_ms').notNull(),
+    text: text('text').notNull(),
+  },
+  (t) => [index('chunks_video_id_idx').on(t.videoId), index('chunks_source_id_idx').on(t.sourceId)],
+);
+
+/**
+ * State of the vector store: which embedding model/dimension the current
+ * `vec_chunks` contents were built with. Two keys: 'model', 'dimension'.
+ * Absent ⟺ nothing embedded yet. A model change requires a full reindex
+ * (see POST /api/sources/:id/reindex).
+ */
+export const embedMeta = sqliteTable('embed_meta', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
