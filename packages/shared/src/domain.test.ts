@@ -162,7 +162,7 @@ describe('Bot / Chat / Message', () => {
       id: 'bot_1',
       name: 'philosophy bot',
       systemPrompt: 'You answer like a philosopher.',
-      model: 'openai/gpt-4o-mini',
+      modelOverride: 'openai/gpt-4o-mini',
       sourceIds: ['src_1', 'src_2'],
       createdAt: '2025-01-01T00:00:00Z',
       updatedAt: '2025-01-02T00:00:00Z',

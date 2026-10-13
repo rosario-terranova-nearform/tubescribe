@@ -6,7 +6,7 @@ export const CreateBotRequestSchema = z
   .object({
     name: z.string().min(1),
     systemPrompt: z.string().default(''),
-    model: z.string().min(1),
+    modelOverride: z.string().min(1).nullable().default(null),
     sourceIds: z.array(z.string().min(1)).default([]),
   })
   .strict();
@@ -24,7 +24,20 @@ export type ListBotsResponse = z.infer<typeof ListBotsResponseSchema>;
 export const GetBotResponseSchema = BotResponseEnvelopeSchema;
 export type GetBotResponse = z.infer<typeof GetBotResponseSchema>;
 
-export const UpdateBotRequestSchema = CreateBotRequestSchema.partial();
+/**
+ * True partial: omitted fields stay undefined (no defaults applied) so the
+ * server can tell "absent" (leave unchanged) from "present" (update). In
+ * particular `modelOverride: null` clears the override, and an omitted
+ * `sourceIds` keeps the current attachments.
+ */
+export const UpdateBotRequestSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    systemPrompt: z.string().optional(),
+    modelOverride: z.string().min(1).nullable().optional(),
+    sourceIds: z.array(z.string().min(1)).optional(),
+  })
+  .strict();
 export type UpdateBotRequest = z.infer<typeof UpdateBotRequestSchema>;
 
 export const UpdateBotResponseSchema = BotResponseEnvelopeSchema;

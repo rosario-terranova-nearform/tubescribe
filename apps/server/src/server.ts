@@ -41,7 +41,14 @@ async function main(): Promise<void> {
     },
   });
 
-  const app = createApp({ config, db, youtube: createDefaultClient, worker, embedWorker });
+  const app = createApp({
+    config,
+    db,
+    youtube: createDefaultClient,
+    worker,
+    embedWorker,
+    embedder,
+  });
   worker.start();
   embedWorker.start();
 

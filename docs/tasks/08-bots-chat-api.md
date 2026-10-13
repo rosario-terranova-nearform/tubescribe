@@ -1,6 +1,6 @@
 # Task 08: Bots + chat REST API
 
-**Status**: pending
+**Status**: done (2026-10-13)
 **Depends on**: 07
 
 ## Goal
@@ -29,7 +29,15 @@ Bots CRUD, OpenRouter model catalog proxy, and the streaming chat endpoint with 
 
 ## Acceptance criteria
 
-- [ ] Integration tests with a mocked AI SDK provider: stream completes, both messages persisted, citations attached to assistant message
-- [ ] Retrieval scoping test: a bot only sees chunks from its attached sources
-- [ ] Bots CRUD + validation errors (400 shared schema), 404 paths
-- [ ] `pnpm test` green
+- [x] Integration tests with a mocked AI SDK provider: stream completes, both messages persisted, citations attached to assistant message
+- [x] Retrieval scoping test: a bot only sees chunks from its attached sources
+- [x] Bots CRUD + validation errors (400 shared schema), 404 paths
+- [x] `pnpm test` green
+
+## As built (2026-10-13)
+
+Two points were settled with the user where this file conflicted with the shared contracts from task 02:
+
+- **Bot model**: implemented as nullable `modelOverride` as written here (bots.model → model_override, migration `0002_bots-model-override.sql` rebuilds the table to drop NOT NULL; chat resolves `modelOverride ?? settings.defaultChatModel ?? config default`). `UpdateBotRequestSchema` is a *true* partial (omitted fields stay unchanged; `modelOverride: null` clears the override).
+- **Chat stream protocol**: kept the shared NDJSON contract (`SendMessageChunkSchema`: `citations` → `delta`* → `done`/`error` on `POST /api/chats/:id/messages`), *not* the AI SDK data-stream format — task 12's web client must parse NDJSON (or wrap it in a custom `useChat` transport).
+- Citations use the shared `CitationSchema` shape (`{ videoId, sourceId, title, startMs, endMs, text }`), not the looser `{ n, videoId, title, startMs, url }` sketched above: `n` is the array position (matching the `[n]` context blocks) and the URL is derivable (`youtube.com/watch?v=<videoId>&t=<startMs/1000>s`).

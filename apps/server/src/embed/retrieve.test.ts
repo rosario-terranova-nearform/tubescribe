@@ -68,7 +68,7 @@ function seedBot(t: TestDb, botId: string, sourceIds: string[]): void {
       id: botId,
       name: botId,
       systemPrompt: 'sp',
-      model: 'm',
+      modelOverride: null,
       createdAt: now,
       updatedAt: now,
     })

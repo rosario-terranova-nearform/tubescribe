@@ -16,3 +16,11 @@ export type Model = z.infer<typeof ModelSchema>;
 
 export const ListModelsResponseSchema = z.object({ models: z.array(ModelSchema) }).strict();
 export type ListModelsResponse = z.infer<typeof ListModelsResponseSchema>;
+
+/** `GET /api/models?type=embedding` switches to the embedding model list. */
+export const ListModelsQuerySchema = z
+  .object({
+    type: z.enum(['chat', 'embedding']).default('chat'),
+  })
+  .strict();
+export type ListModelsQuery = z.infer<typeof ListModelsQuerySchema>;

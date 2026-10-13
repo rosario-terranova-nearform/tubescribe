@@ -111,7 +111,8 @@ export const bots = sqliteTable('bots', {
     .$defaultFn(() => randomUUID()),
   name: text('name').notNull(),
   systemPrompt: text('system_prompt').notNull(),
-  model: text('model').notNull(),
+  /** Nullable per-bot override; null → settings.defaultChatModel at chat time. */
+  modelOverride: text('model_override'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

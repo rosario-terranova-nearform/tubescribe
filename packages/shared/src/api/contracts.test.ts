@@ -24,6 +24,7 @@ import {
   ListChatsResponseSchema,
   ListJobsQuerySchema,
   ListJobsResponseSchema,
+  ListModelsQuerySchema,
   ListModelsResponseSchema,
   ListSourceVideosQuerySchema,
   ListSourceVideosResponseSchema,
@@ -76,7 +77,7 @@ const BOT = {
   id: 'bot_1',
   name: 'philo',
   systemPrompt: 'You answer like a philosopher.',
-  model: 'openai/gpt-4o-mini',
+  modelOverride: 'openai/gpt-4o-mini',
   sourceIds: ['src_1'],
   createdAt: NOW,
   updatedAt: NOW,
@@ -248,10 +249,16 @@ describe('jobs contract', () => {
 });
 
 describe('bots contract', () => {
-  it('create requires name+model, defaults systemPrompt and sourceIds', () => {
-    const parsed = CreateBotRequestSchema.parse({ name: 'philo', model: 'openai/gpt-4o-mini' });
+  it('create requires name only, defaults systemPrompt, modelOverride and sourceIds', () => {
+    const parsed = CreateBotRequestSchema.parse({ name: 'philo' });
     expect(parsed.systemPrompt).toBe('');
+    expect(parsed.modelOverride).toBeNull();
     expect(parsed.sourceIds).toEqual([]);
+    expect(
+      CreateBotRequestSchema.parse({ name: 'philo', modelOverride: 'openai/gpt-4o-mini' })
+        .modelOverride,
+    ).toBe('openai/gpt-4o-mini');
+    expect(() => CreateBotRequestSchema.parse({ modelOverride: 'x' })).toThrow();
   });
 
   it('list/get/create/update wrapping a bot round-trip', () => {
@@ -261,12 +268,11 @@ describe('bots contract', () => {
     expectRoundTrip(UpdateBotResponseSchema, { bot: BOT }, { bot: BOT });
   });
 
-  it('update request is partial; defaults are applied to omitted fields too', () => {
-    expect(UpdateBotRequestSchema.parse({ name: 'new' })).toEqual({
-      name: 'new',
-      systemPrompt: '',
-      sourceIds: [],
-    });
+  it('update request is a true partial: omitted fields stay undefined', () => {
+    expect(UpdateBotRequestSchema.parse({ name: 'new' })).toEqual({ name: 'new' });
+    // null clears the model override; omitting it leaves it unchanged.
+    expect(UpdateBotRequestSchema.parse({ modelOverride: null })).toEqual({ modelOverride: null });
+    expect(UpdateBotRequestSchema.parse({})).toEqual({});
     expect(() => UpdateBotRequestSchema.parse({ name: 42 })).toThrow();
   });
 
@@ -300,6 +306,12 @@ describe('models contract', () => {
       ],
     };
     expectRoundTrip(ListModelsResponseSchema, v, v);
+  });
+
+  it('list query defaults type to chat and accepts embedding', () => {
+    expect(ListModelsQuerySchema.parse({})).toEqual({ type: 'chat' });
+    expect(ListModelsQuerySchema.parse({ type: 'embedding' })).toEqual({ type: 'embedding' });
+    expect(() => ListModelsQuerySchema.parse({ type: 'bogus' })).toThrow();
   });
 });
 

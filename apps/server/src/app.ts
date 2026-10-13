@@ -4,13 +4,22 @@
 import type { ApiError, ApiErrorCode } from '@tubescribe/shared';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
+import {
+  type ChatModelFactory,
+  createOpenRouterChatModelFactory,
+  registerChatRoutes,
+} from './chat.js';
 import type { Config } from './config.js';
 import type { Db } from './db/client.js';
+import { type Embedder, createOpenRouterEmbedder } from './embed/embedder.js';
 import { HttpError } from './http-error.js';
 import { createLogger } from './logger.js';
 import { createHttpLogger } from './middleware.js';
+import { registerBotsRoutes } from './routes/bots.js';
+import { registerChatsRoutes } from './routes/chats.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerJobsRoutes } from './routes/jobs.js';
+import { registerModelsRoutes } from './routes/models.js';
 import { registerSettingsRoutes } from './routes/settings.js';
 import { registerSourcesRoutes } from './routes/sources.js';
 import type { InnertubeFactory } from './youtube/types.js';
@@ -24,6 +33,12 @@ export interface AppDeps {
   worker?: { notify(): void };
   /** Embed worker handle — woken after a reindex job is enqueued. */
   embedWorker?: { notify(): void };
+  /** Embeddings client for chat retrieval (tests inject the fake). */
+  embedder?: Embedder;
+  /** Chat LLM factory (tests inject ai/test mocks). */
+  chatModel?: ChatModelFactory;
+  /** fetch for the OpenRouter model catalog proxy (tests inject a fake). */
+  fetchFn?: typeof fetch;
 }
 
 function apiError(code: ApiErrorCode, message: string, details?: HttpError['details']): ApiError {
@@ -37,7 +52,16 @@ function isBodyParseError(err: unknown): err is SyntaxError & { status: number }
   );
 }
 
-export function createApp({ config, db, youtube, worker, embedWorker }: AppDeps): Express {
+export function createApp({
+  config,
+  db,
+  youtube,
+  worker,
+  embedWorker,
+  embedder,
+  chatModel,
+  fetchFn,
+}: AppDeps): Express {
   const logger = createLogger(config);
   const app = express();
 
@@ -48,6 +72,17 @@ export function createApp({ config, db, youtube, worker, embedWorker }: AppDeps)
   registerSettingsRoutes(app, db);
   registerSourcesRoutes(app, { db, config, youtube, worker, embedWorker, logger });
   registerJobsRoutes(app, db);
+  registerBotsRoutes(app, db);
+  registerModelsRoutes(app, { fetchFn, logger });
+  registerChatsRoutes(app, db);
+  registerChatRoutes(app, {
+    db,
+    config,
+    // Defaults do no I/O at construction; both are always injected in tests.
+    embedder: embedder ?? createOpenRouterEmbedder({ apiKey: config.openrouterApiKey, logger }),
+    chatModel: chatModel ?? createOpenRouterChatModelFactory(config),
+    logger,
+  });
 
   // Unknown routes → 404 in the shared error shape.
   app.use((_req, res) => {

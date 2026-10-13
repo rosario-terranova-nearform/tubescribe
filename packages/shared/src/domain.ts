@@ -156,7 +156,8 @@ export const BotSchema = z
     id: z.string().min(1),
     name: z.string().min(1),
     systemPrompt: z.string(),
-    model: z.string().min(1),
+    /** Per-bot model override; null → the settings default chat model is used. */
+    modelOverride: z.string().min(1).nullable(),
     sourceIds: z.array(z.string().min(1)),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
