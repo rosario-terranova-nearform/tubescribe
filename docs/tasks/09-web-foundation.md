@@ -1,6 +1,6 @@
 # Task 09: Web foundation: Tailwind, shadcn, router, query
 
-**Status**: pending
+**Status**: done (2026-10-14)
 **Depends on**: 01, 02
 
 ## Goal

@@ -15,7 +15,7 @@ Design source of truth: [`../DESIGN.md`](../DESIGN.md). Never deviate without as
 | 06 | [Sources REST API](06-sources-api.md) | done (2026-10-09) | 05 |
 | 07 | [Embeddings pipeline: chunker, sqlite-vec, retrieval](07-embeddings-pipeline.md) | done (2026-10-12) | 05 |
 | 08 | [Bots + chat REST API](08-bots-chat-api.md) | done (2026-10-13) | 07 |
-| 09 | [Web foundation: Tailwind, shadcn, router, query](09-web-foundation.md) | pending | 01, 02 |
+| 09 | [Web foundation: Tailwind, shadcn, router, query](09-web-foundation.md) | done (2026-10-14) | 01, 02 |
 | 10 | [Sources UI](10-sources-ui.md) | pending | 06, 09 |
 | 11 | [Bots UI](11-bots-ui.md) | pending | 08, 09 |
 | 12 | [Chat UI](12-chat-ui.md) | pending | 08, 09 |
