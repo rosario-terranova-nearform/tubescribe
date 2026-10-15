@@ -1,6 +1,6 @@
 # Task 10: Sources UI
 
-**Status**: pending
+**Status**: done (2026-10-15)
 **Depends on**: 06, 09
 
 ## Goal

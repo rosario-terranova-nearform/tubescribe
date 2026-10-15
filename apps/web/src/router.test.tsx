@@ -4,17 +4,40 @@ import { RouterProvider, createMemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { routes } from './router.tsx';
 
-function stubJobs(payload: unknown) {
+const SOURCE_FIXTURE = {
+  kind: 'channel',
+  title: 'Test source',
+  thumbnailUrl: null,
+  channelId: null,
+  channelTitle: null,
+  videoCount: 0,
+  typeFilter: { uploads: true, shorts: false, live: false },
+  createdAt: '2026-10-15T00:00:00.000Z',
+  status: { total: 0, pending: 0, fetched: 0, failed: 0, embedded: 0 },
+};
+
+/** Stubs every endpoint the app shell + sources pages call, dispatched by URL. */
+function stubApi(jobsPayload: unknown = { jobs: [] }) {
   vi.stubGlobal(
     'fetch',
-    vi.fn(() =>
-      Promise.resolve(
+    vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      let payload: unknown;
+      const sourceMatch = /\/api\/sources\/([^/?]+)/.exec(url);
+      if (url.includes('/api/jobs')) payload = jobsPayload;
+      else if (sourceMatch && /\/videos(\?|$)/.test(url)) {
+        payload = { videos: [], total: 0, limit: 500, offset: 0 };
+      } else if (sourceMatch) {
+        payload = { source: { ...SOURCE_FIXTURE, id: sourceMatch[1], identifier: sourceMatch[1] } };
+      } else if (url.endsWith('/api/sources')) payload = { sources: [] };
+      else return Promise.reject(new Error(`unexpected fetch: ${url}`));
+      return Promise.resolve(
         new Response(JSON.stringify(payload), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         }),
-      ),
-    ),
+      );
+    }),
   );
 }
 
@@ -34,14 +57,14 @@ afterEach(() => {
 
 describe('router', () => {
   it('redirects / to /sources', async () => {
-    stubJobs({ jobs: [] });
+    stubApi();
     renderRoute('/');
     expect(await screen.findByRole('heading', { name: 'Sources' })).toBeInTheDocument();
   });
 
   const pages = [
     ['/sources', 'Sources'],
-    ['/sources/src_1', 'Source detail'],
+    ['/sources/src_1', 'Test source'],
     ['/bots', 'Bots'],
     ['/bots/new', 'New bot'],
     ['/bots/bot_1/edit', 'Edit bot'],
@@ -50,7 +73,7 @@ describe('router', () => {
   ] as const;
 
   it.each(pages)('renders %s under the app layout', async (path, heading) => {
-    stubJobs({ jobs: [] });
+    stubApi();
     renderRoute(path);
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
     // AppLayout chrome is present on every route.
@@ -58,14 +81,14 @@ describe('router', () => {
   });
 
   it('shows the route param on detail pages', async () => {
-    stubJobs({ jobs: [] });
+    stubApi();
     renderRoute('/sources/abc123');
-    await screen.findByRole('heading', { name: 'Source detail' });
+    await screen.findByRole('heading', { name: 'Test source' });
     expect(screen.getByText(/abc123/)).toBeInTheDocument();
   });
 
   it('navigates between pages via the header nav', async () => {
-    stubJobs({ jobs: [] });
+    stubApi();
     renderRoute('/sources');
     await screen.findByRole('heading', { name: 'Sources' });
 
@@ -78,14 +101,14 @@ describe('router', () => {
 
   describe('GlobalJobIndicator', () => {
     it('stays hidden when no job is queued or running', async () => {
-      stubJobs({ jobs: [] });
+      stubApi();
       renderRoute('/sources');
       await screen.findByRole('heading', { name: 'Sources' });
       expect(screen.queryByTestId('global-job-indicator')).not.toBeInTheDocument();
     });
 
     it('shows active job progress while a job runs', async () => {
-      stubJobs({
+      stubApi({
         jobs: [
           {
             id: 'job_1',

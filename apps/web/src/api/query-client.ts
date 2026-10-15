@@ -1,6 +1,7 @@
 // TanStack Query client + job-polling helpers.
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, useQueryClient } from '@tanstack/react-query';
 import type { ListJobsResponse } from '@tubescribe/shared';
+import { useEffect, useRef } from 'react';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,4 +31,20 @@ export function hasActiveJobs(data: ListJobsResponse | undefined): boolean {
  */
 export function pollWhileJobsActive(data: ListJobsResponse | undefined): number | false {
   return hasActiveJobs(data) ? JOB_POLL_INTERVAL_MS : false;
+}
+
+/**
+ * When `active` flips from true to false, invalidate `key` once. Job-driven
+ * pages poll while a job runs; this guarantees one final refresh after the
+ * last job finishes so the UI never keeps a stale mid-job snapshot.
+ */
+export function useInvalidateOnIdle(active: boolean, key: readonly unknown[]): void {
+  const queryClient = useQueryClient();
+  const wasActive = useRef(active);
+  useEffect(() => {
+    if (wasActive.current && !active) {
+      queryClient.invalidateQueries({ queryKey: key });
+    }
+    wasActive.current = active;
+  }, [active, key, queryClient]);
 }
