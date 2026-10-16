@@ -16,7 +16,24 @@ const SOURCE_FIXTURE = {
   status: { total: 0, pending: 0, fetched: 0, failed: 0, embedded: 0 },
 };
 
-/** Stubs every endpoint the app shell + sources pages call, dispatched by URL. */
+const BOT_FIXTURE = {
+  name: 'Test bot',
+  systemPrompt: 'You are helpful.',
+  modelOverride: null,
+  sourceIds: [],
+  createdAt: '2026-10-15T00:00:00.000Z',
+  updatedAt: '2026-10-15T00:00:00.000Z',
+};
+
+const SETTINGS_FIXTURE = {
+  defaultChatModel: 'openai/gpt-4o-mini',
+  defaultEmbeddingModel: 'openai/text-embedding-3-small',
+  youtubeRequestDelayMsMin: 1000,
+  youtubeRequestDelayMsMax: 3000,
+  transcriptFetchConcurrency: 1,
+};
+
+/** Stubs every endpoint the app shell + pages call, dispatched by URL. */
 function stubApi(jobsPayload: unknown = { jobs: [] }) {
   vi.stubGlobal(
     'fetch',
@@ -24,12 +41,17 @@ function stubApi(jobsPayload: unknown = { jobs: [] }) {
       const url = String(input);
       let payload: unknown;
       const sourceMatch = /\/api\/sources\/([^/?]+)/.exec(url);
+      const botMatch = /\/api\/bots\/([^/?]+)/.exec(url);
       if (url.includes('/api/jobs')) payload = jobsPayload;
       else if (sourceMatch && /\/videos(\?|$)/.test(url)) {
         payload = { videos: [], total: 0, limit: 500, offset: 0 };
       } else if (sourceMatch) {
         payload = { source: { ...SOURCE_FIXTURE, id: sourceMatch[1], identifier: sourceMatch[1] } };
       } else if (url.endsWith('/api/sources')) payload = { sources: [] };
+      else if (botMatch) payload = { bot: { ...BOT_FIXTURE, id: botMatch[1] } };
+      else if (url.endsWith('/api/bots')) payload = { bots: [] };
+      else if (url.includes('/api/models')) payload = { models: [] };
+      else if (url.endsWith('/api/settings')) payload = { settings: SETTINGS_FIXTURE };
       else return Promise.reject(new Error(`unexpected fetch: ${url}`));
       return Promise.resolve(
         new Response(JSON.stringify(payload), {

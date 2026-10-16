@@ -1,6 +1,6 @@
 # Task 11: Bots UI
 
-**Status**: pending
+**Status**: done (2026-10-16)
 **Depends on**: 08, 09
 
 ## Goal

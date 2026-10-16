@@ -1,7 +1,10 @@
-import { PagePlaceholder } from '@/components/PagePlaceholder.tsx';
+import { BotForm } from '@/components/BotForm.tsx';
 
 export function BotNewPage() {
   return (
-    <PagePlaceholder title="New bot" description="The bot creation form lands here (task 11)." />
+    <section className="flex flex-col gap-6">
+      <h1 className="text-2xl font-semibold tracking-tight">New bot</h1>
+      <BotForm />
+    </section>
   );
 }
