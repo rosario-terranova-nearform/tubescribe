@@ -1,4 +1,4 @@
-import { useModels } from '@/api/models.ts';
+import { type ModelType, useModels } from '@/api/models.ts';
 import { useSettings } from '@/api/settings.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
@@ -9,10 +9,16 @@ import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { useState } from 'react';
 
 interface ModelPickerProps {
-  /** Selected model id; `null` means "use the global default". */
+  /** Selected model id; `null` means "use the global default" (allowDefault) or "no selection". */
   value: string | null;
   onChange: (value: string | null) => void;
   disabled?: boolean;
+  /** Which catalog to browse (chat is the default). */
+  type?: ModelType;
+  /** Show the "Default (…)" null option (bot forms); hide it where a concrete model is required (settings). */
+  allowDefault?: boolean;
+  /** Accessible label for the trigger/listbox. */
+  label?: string;
 }
 
 function modelLabel(model: Model): string {
@@ -25,11 +31,18 @@ function modelLabel(model: Model): string {
  * catalog cache. The empty selection means "use the global default", and its
  * label shows what that default currently is.
  */
-export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
+export function ModelPicker({
+  value,
+  onChange,
+  disabled,
+  type = 'chat',
+  allowDefault = true,
+  label = 'Chat model',
+}: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const settingsQuery = useSettings();
-  const modelsQuery = useModels({ enabled: open });
+  const modelsQuery = useModels({ enabled: open, type });
 
   const defaultModel =
     settingsQuery.data?.settings.defaultChatModel ?? DEFAULT_SETTINGS.defaultChatModel;
@@ -38,11 +51,17 @@ export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
   const needle = query.trim().toLowerCase();
   const matches = (text: string) => text.toLowerCase().includes(needle);
   const filtered = needle ? models.filter((m) => matches(m.id) || matches(m.name)) : models;
-  const showDefault = !needle || matches('default') || matches(defaultModel);
+  const showDefault = allowDefault && (!needle || matches('default') || matches(defaultModel));
 
   const selected = value == null ? null : models.find((m) => m.id === value);
   const triggerLabel =
-    value == null ? `Default (${defaultModel})` : selected ? modelLabel(selected) : value;
+    value == null
+      ? allowDefault
+        ? `Default (${defaultModel})`
+        : 'Select a model…'
+      : selected
+        ? modelLabel(selected)
+        : value;
 
   const select = (next: string | null) => {
     onChange(next);
@@ -65,7 +84,7 @@ export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
           // biome-ignore lint/a11y/useSemanticElements: combobox trigger — a native <select> cannot host search or an async-loading catalog
           role="combobox"
           aria-expanded={open}
-          aria-label="Chat model"
+          aria-label={label}
           disabled={disabled}
           className="w-full justify-between font-normal"
         >
@@ -113,7 +132,7 @@ export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
             // biome-ignore lint/a11y/useFocusableInteractive: focus stays on the search input; options are tabbable buttons
             <div
               role="listbox"
-              aria-label="Chat models"
+              aria-label={`${label}s`}
               className="flex max-h-64 flex-col gap-0.5 overflow-y-auto"
             >
               {showDefault && (

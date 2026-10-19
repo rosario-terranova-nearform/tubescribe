@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.vite
+**/coverage
+data
+.env
+.git
+.opencode
+docs
+*.log
+.DS_Store
+docker-compose.yml

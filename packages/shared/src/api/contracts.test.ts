@@ -406,6 +406,7 @@ describe('settings contract', () => {
         youtubeRequestDelayMsMax: 3000,
         transcriptFetchConcurrency: 1,
       },
+      openrouterKeyConfigured: true,
     };
     expectRoundTrip(GetSettingsResponseSchema, v, v);
   });
@@ -426,10 +427,8 @@ describe('settings contract', () => {
     };
     expectRoundTrip(
       UpdateSettingsResponseSchema,
-      { settings: settingsNull },
-      {
-        settings: settingsNull,
-      },
+      { settings: settingsNull, openrouterKeyConfigured: false },
+      { settings: settingsNull, openrouterKeyConfigured: false },
     );
   });
 });

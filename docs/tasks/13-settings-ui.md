@@ -1,6 +1,6 @@
 # Task 13: Settings UI
 
-**Status**: pending
+**Status**: done (2026-10-19)
 **Depends on**: 03, 09
 
 ## Goal

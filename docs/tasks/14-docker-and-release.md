@@ -1,6 +1,6 @@
 # Task 14: Docker, prod serving, README, release
 
-**Status**: pending
+**Status**: done (2026-10-19) — live Docker run deferred (Docker Desktop registry DNS unreachable on this machine at the time); Dockerfile statically verified + native prebuilds confirmed; prod serving + fresh-clone flow verified live
 **Depends on**: all previous tasks
 
 ## Goal

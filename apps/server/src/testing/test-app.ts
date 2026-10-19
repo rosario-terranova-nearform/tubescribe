@@ -22,6 +22,8 @@ export interface TestAppDeps {
   chatModel?: ChatModelFactory;
   /** Loud default for the models proxy: no fetch unless injected. */
   fetchFn?: typeof fetch;
+  /** Static web-serving dir; defaults to off so tests never depend on a local web build. */
+  webDist?: string | null;
 }
 
 export interface TestApp extends TestDb {
@@ -50,6 +52,7 @@ export function makeTestApp(overrides: Partial<Config> = {}, deps: TestAppDeps =
     embedder: deps.embedder ?? fakeEmbedder(),
     chatModel: deps.chatModel ?? noChatModel,
     fetchFn: deps.fetchFn ?? noFetch,
+    webDist: deps.webDist ?? null,
   });
   return { ...base, app };
 }

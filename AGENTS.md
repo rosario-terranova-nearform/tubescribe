@@ -10,6 +10,7 @@
 ## Stack
 
 - pnpm monorepo: `apps/server` (Express + TS, :3001), `apps/web` (Vite + React + TS, :5173), `packages/shared` (zod schemas + types)
+- Prod: the Express server also serves `apps/web/dist` (SPA fallback, `/api` stays JSON) — see `createApp`'s `webDist` dep; release artifacts: root `Dockerfile`, `docker-compose.yml`, `.dockerignore`
 - ESM-only (`"type": "module"` everywhere), TS strict, Node >= 22
 - SQLite via better-sqlite3 + Drizzle (drizzle-kit migrations); vectors via sqlite-vec; transcripts as JSON + MD files under `data/`
 - youtubei.js (keyless) for discovery + transcripts; the `youtube-transcript` npm package as fallback engine
@@ -18,8 +19,6 @@
 - vitest (unit + integration), biome (lint + format), pino (server logging)
 
 ## Commands
-
-Available once task 01 lands:
 
 | Command | What it does |
 | --- | --- |

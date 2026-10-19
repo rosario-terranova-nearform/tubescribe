@@ -6,7 +6,7 @@
   "description": "tubescribe Express API server",
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/server.ts",
-    "start": "node --env-file=../../.env dist/server.js",
+    "start": "node --env-file-if-exists=../../.env dist/server.js",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

@@ -24,14 +24,25 @@ describe('/api/settings', () => {
     });
   });
 
-  it('never leaks the OpenRouter API key', async () => {
+  it('reports key-configured as a boolean, never the key itself', async () => {
     t = makeTestApp();
 
     const res = await request(t.app).get('/api/settings');
 
     expect(res.status).toBe(200);
+    expect(res.body.openrouterKeyConfigured).toBe(true);
     expect(res.text).not.toContain('sk-or-test-secret');
-    expect(res.text.toLowerCase()).not.toContain('openrouter');
+    expect(res.body.settings.openrouterApiKey).toBeUndefined();
+    expect(res.body.settings.openrouterKeyConfigured).toBeUndefined();
+  });
+
+  it('reports openrouterKeyConfigured: false when no key is set', async () => {
+    t = makeTestApp({ openrouterApiKey: undefined });
+
+    const res = await request(t.app).get('/api/settings');
+
+    expect(res.status).toBe(200);
+    expect(res.body.openrouterKeyConfigured).toBe(false);
   });
 
   it('PUT updates a partial body and GET reflects it (round trip)', async () => {

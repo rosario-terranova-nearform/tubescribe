@@ -52,7 +52,8 @@ function stubApi(jobsPayload: unknown = { jobs: [] }) {
       else if (botMatch) payload = { bot: { ...BOT_FIXTURE, id: botMatch[1] } };
       else if (url.endsWith('/api/bots')) payload = { bots: [] };
       else if (url.includes('/api/models')) payload = { models: [] };
-      else if (url.endsWith('/api/settings')) payload = { settings: SETTINGS_FIXTURE };
+      else if (url.endsWith('/api/settings'))
+        payload = { settings: SETTINGS_FIXTURE, openrouterKeyConfigured: true };
       else return Promise.reject(new Error(`unexpected fetch: ${url}`));
       return Promise.resolve(
         new Response(JSON.stringify(payload), {

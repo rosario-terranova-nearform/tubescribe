@@ -88,7 +88,7 @@ function stubFetch(routes: StubRoutes = {}) {
       return Promise.resolve(jsonResponse({ sources: SOURCES }));
     }
     if (url.endsWith('/api/settings') && method === 'GET') {
-      return Promise.resolve(jsonResponse({ settings: SETTINGS }));
+      return Promise.resolve(jsonResponse({ settings: SETTINGS, openrouterKeyConfigured: true }));
     }
     if (url.includes('/api/models') && method === 'GET') {
       return Promise.resolve(jsonResponse({ models: MODELS }));

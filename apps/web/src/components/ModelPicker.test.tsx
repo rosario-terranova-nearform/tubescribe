@@ -48,7 +48,7 @@ function stubFetch(routes: StubRoutes = {}) {
       return Promise.resolve(routes.models ?? jsonResponse({ models: MODELS }));
     }
     if (url.endsWith('/api/settings')) {
-      return Promise.resolve(jsonResponse({ settings: SETTINGS }));
+      return Promise.resolve(jsonResponse({ settings: SETTINGS, openrouterKeyConfigured: true }));
     }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));
   });
@@ -130,6 +130,28 @@ describe('ModelPicker', () => {
     openPicker();
     fireEvent.click(await screen.findByRole('option', { name: /Default \(openai\/gpt-4o\)/ }));
     expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it('fetches the embedding catalog when type="embedding"', async () => {
+    const spy = stubFetch();
+    renderPicker({ type: 'embedding', label: 'Embedding model' });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Embedding model' }));
+    await screen.findByRole('option', { name: /GPT-4o/ });
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('/api/models?type=embedding'),
+      expect.anything(),
+    );
+  });
+
+  it('hides the default option and shows a placeholder when allowDefault is false', async () => {
+    stubFetch();
+    renderPicker({ allowDefault: false });
+    expect(screen.getByRole('combobox', { name: 'Chat model' })).toHaveTextContent(
+      'Select a model…',
+    );
+    openPicker();
+    await screen.findByRole('option', { name: /GPT-4o/ });
+    expect(screen.queryByRole('option', { name: /Default \(/ })).not.toBeInTheDocument();
   });
 
   it('shows the selected model name once the catalog has loaded', async () => {

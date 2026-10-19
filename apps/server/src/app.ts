@@ -1,6 +1,9 @@
 // Express app factory. Pure: all dependencies (config, db) are injected so
 // tests can wire a temp-dir DB without touching process.env or the network.
 
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { ApiError, ApiErrorCode } from '@tubescribe/shared';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
@@ -39,6 +42,21 @@ export interface AppDeps {
   chatModel?: ChatModelFactory;
   /** fetch for the OpenRouter model catalog proxy (tests inject a fake). */
   fetchFn?: typeof fetch;
+  /**
+   * Prod serving (task 14): directory with the built web app. `undefined`
+   * resolves <repo>/apps/web/dist when it contains index.html; `null`
+   * disables static serving (tests); a string pins the directory.
+   */
+  webDist?: string | null;
+}
+
+// Resolved like config.ts: repo root is three levels up from src/ and dist/.
+const DEFAULT_WEB_DIST = fileURLToPath(new URL('../../../apps/web/dist', import.meta.url));
+
+function resolveWebDist(option: string | null | undefined): string | null {
+  if (option === null) return null;
+  const dir = option ?? DEFAULT_WEB_DIST;
+  return existsSync(join(dir, 'index.html')) ? dir : null;
 }
 
 function apiError(code: ApiErrorCode, message: string, details?: HttpError['details']): ApiError {
@@ -61,6 +79,7 @@ export function createApp({
   embedder,
   chatModel,
   fetchFn,
+  webDist: webDistOption,
 }: AppDeps): Express {
   const logger = createLogger(config);
   const app = express();
@@ -69,7 +88,7 @@ export function createApp({
   app.use(createHttpLogger(logger));
 
   registerHealthRoutes(app);
-  registerSettingsRoutes(app, db);
+  registerSettingsRoutes(app, db, config);
   registerSourcesRoutes(app, { db, config, youtube, worker, embedWorker, logger });
   registerJobsRoutes(app, db);
   registerBotsRoutes(app, db);
@@ -83,6 +102,19 @@ export function createApp({
     chatModel: chatModel ?? createOpenRouterChatModelFactory(config),
     logger,
   });
+
+  // Prod serving: the built web app, when present. API 404s stay JSON; any
+  // other GET falls back to index.html so client-side routes load directly.
+  const webDist = resolveWebDist(webDistOption);
+  if (webDist) app.use(express.static(webDist));
+  app.use('/api', (_req, res) => {
+    res.status(404).json(apiError('NOT_FOUND', 'Not found'));
+  });
+  if (webDist) {
+    app.get('*', (_req, res) => {
+      res.sendFile(join(webDist, 'index.html'));
+    });
+  }
 
   // Unknown routes → 404 in the shared error shape.
   app.use((_req, res) => {

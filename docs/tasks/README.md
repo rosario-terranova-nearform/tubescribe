@@ -19,8 +19,8 @@ Design source of truth: [`../DESIGN.md`](../DESIGN.md). Never deviate without as
 | 10 | [Sources UI](10-sources-ui.md) | done (2026-10-15) | 06, 09 |
 | 11 | [Bots UI](11-bots-ui.md) | done (2026-10-16) | 08, 09 |
 | 12 | [Chat UI](12-chat-ui.md) | done (2026-10-19) | 08, 09 |
-| 13 | [Settings UI](13-settings-ui.md) | pending | 03, 09 |
-| 14 | [Docker, prod serving, README, release](14-docker-and-release.md) | pending | all above |
+| 13 | [Settings UI](13-settings-ui.md) | done (2026-10-19) | 03, 09 |
+| 14 | [Docker, prod serving, README, release](14-docker-and-release.md) | done (2026-10-19) | all above |
 
 ## Rules
 
