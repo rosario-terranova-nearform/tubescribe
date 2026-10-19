@@ -48,6 +48,7 @@ function stubApi(jobsPayload: unknown = { jobs: [] }) {
       } else if (sourceMatch) {
         payload = { source: { ...SOURCE_FIXTURE, id: sourceMatch[1], identifier: sourceMatch[1] } };
       } else if (url.endsWith('/api/sources')) payload = { sources: [] };
+      else if (botMatch && /\/chats(\?|$)/.test(url)) payload = { chats: [] };
       else if (botMatch) payload = { bot: { ...BOT_FIXTURE, id: botMatch[1] } };
       else if (url.endsWith('/api/bots')) payload = { bots: [] };
       else if (url.includes('/api/models')) payload = { models: [] };
@@ -90,7 +91,7 @@ describe('router', () => {
     ['/bots', 'Bots'],
     ['/bots/new', 'New bot'],
     ['/bots/bot_1/edit', 'Edit bot'],
-    ['/bots/bot_1', 'Bot chat'],
+    ['/bots/bot_1', 'Test bot'],
     ['/settings', 'Settings'],
   ] as const;
 

@@ -44,6 +44,19 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Normalizes a non-OK response to an ApiRequestError (used by apiFetch and
+ *  by streaming callers that read the body themselves). */
+export async function toApiRequestError(response: Response): Promise<ApiRequestError> {
+  const payload: unknown = await response.json().catch(() => undefined);
+  const parsed = ApiErrorSchema.safeParse(payload);
+  if (parsed.success) return ApiRequestError.fromApiError(response.status, parsed.data);
+  return new ApiRequestError(
+    response.status,
+    'INTERNAL',
+    `Request failed with status ${response.status}`,
+  );
+}
+
 export interface ApiFetchOptions extends Omit<RequestInit, 'body'> {
   /** Serialized as JSON and sent with a JSON content-type when defined. */
   body?: unknown;
@@ -78,16 +91,7 @@ export async function apiFetch<S extends z.ZodType>(
     );
   }
 
-  if (!response.ok) {
-    const payload: unknown = await response.json().catch(() => undefined);
-    const parsed = ApiErrorSchema.safeParse(payload);
-    if (parsed.success) throw ApiRequestError.fromApiError(response.status, parsed.data);
-    throw new ApiRequestError(
-      response.status,
-      'INTERNAL',
-      `Request failed with status ${response.status}`,
-    );
-  }
+  if (!response.ok) throw await toApiRequestError(response);
 
   const payload: unknown = await response.json();
   return schema.parse(payload);

@@ -14,7 +14,7 @@
 - SQLite via better-sqlite3 + Drizzle (drizzle-kit migrations); vectors via sqlite-vec; transcripts as JSON + MD files under `data/`
 - youtubei.js (keyless) for discovery + transcripts; the `youtube-transcript` npm package as fallback engine
 - Vercel AI SDK v7 + `@openrouter/ai-sdk-provider`; OpenRouter key in server `.env` only, never sent to the web client
-- Web: Tailwind v4 + shadcn/ui, react-router v7, react-hook-form + zod, TanStack Query
+- Web: Tailwind v4 + shadcn/ui, react-router v7, react-hook-form + zod, TanStack Query, `@ai-sdk/react` (`useChat` + custom NDJSON transport in `apps/web/src/lib/chat.ts`), react-markdown
 - vitest (unit + integration), biome (lint + format), pino (server logging)
 
 ## Commands

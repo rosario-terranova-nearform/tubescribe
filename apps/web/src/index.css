@@ -118,3 +118,32 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Assistant message markdown (no typography plugin — just the essentials). */
+@layer components {
+  .chat-markdown {
+    @apply flex flex-col gap-2 break-words;
+  }
+  .chat-markdown ul,
+  .chat-markdown ol {
+    @apply flex flex-col gap-1 pl-5;
+  }
+  .chat-markdown ul {
+    @apply list-disc;
+  }
+  .chat-markdown ol {
+    @apply list-decimal;
+  }
+  .chat-markdown code {
+    @apply rounded bg-muted px-1 py-0.5 font-mono text-[0.8125rem];
+  }
+  .chat-markdown pre {
+    @apply overflow-x-auto rounded-md bg-muted p-3;
+  }
+  .chat-markdown pre code {
+    @apply bg-transparent p-0;
+  }
+  .chat-markdown a {
+    @apply underline underline-offset-2;
+  }
+}

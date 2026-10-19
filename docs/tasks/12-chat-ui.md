@@ -1,6 +1,6 @@
 # Task 12: Chat UI
 
-**Status**: pending
+**Status**: done (2026-10-19) — live LLM smoke deferred (no OpenRouter key in `.env` at the time); unit/integration tests + live error-path check green
 **Depends on**: 08, 09
 
 ## Goal
